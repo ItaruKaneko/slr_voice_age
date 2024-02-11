@@ -1,3 +1,5 @@
+import os
+
 def read_tab_separated_file(filename):
     data = []
     with open(filename, 'r') as file:
@@ -8,10 +10,22 @@ def read_tab_separated_file(filename):
     return data
 
 # ファイル名を指定
-filename = "C:\Users\itaru\OneDrive\prj-07\expr2024\2024openslr_speech\slr101\speechocean762\test\spk2age"
+age_file_list_filename = "../slr101/speechocean762/test/spk2age"
+wave_file_folder = "../slr101/speechocean762/WAVE"
 
 # ファイルを読み込み
-data_array = read_tab_separated_file(filename)
+print('corrent directory : ' , os.getcwd())
+print('reading ', age_file_list_filename, '...')
+age_file_list = read_tab_separated_file(age_file_list_filename)
 
 # データの確認
-print(data_array)
+print(len(age_file_list) , ' data had been raead.')
+
+# age_file_list の全要素について処理する
+
+for file_name in age_file_list:
+    # ここに各ファイルに対する処理を書く
+    print("現在のファイル:", file_name)
+    # 例えばファイルを開いて内容を読むなどの処理が入る
+
+print('done')
