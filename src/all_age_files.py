@@ -1,5 +1,10 @@
 import os
 
+# ファイル名を指定
+age_file_list_filename = "../slr101/speechocean762/test/spk2age"
+wave_file_folder = "../slr101/speechocean762/WAVE"
+
+# tab 区切りの表をファイルから読み込み、リストのリストで返す
 def read_tab_separated_file(filename):
     data = []
     with open(filename, 'r') as file:
@@ -9,12 +14,13 @@ def read_tab_separated_file(filename):
             data.append(split_line)
     return data
 
+def process_single_wav_file(folder1,fn1, age1):
+    sz1 = os.path.getsize(folder1 + '/' + fn1)
+    print(fn1, age1, sz1)
 
-# ファイル名を指定
-age_file_list_filename = "../slr101/speechocean762/test/spk2age"
-wave_file_folder = "../slr101/speechocean762/WAVE"
 
-# ファイルを読み込み
+
+# 現在のフォルダを表示した後指定したフォルダから情報を読み込む
 print('corrent directory : ' , os.getcwd())
 print('reading ', age_file_list_filename, '...')
 age_file_list = read_tab_separated_file(age_file_list_filename)
@@ -22,8 +28,7 @@ age_file_list = read_tab_separated_file(age_file_list_filename)
 # データの確認
 print(len(age_file_list) , ' data had been raead.')
 
-# age_file_list の全要素について処理する
-
+# age_file_list の全フォルダの全wavファイルを処理するループ
 for spkr_age_record in age_file_list:
     # ここに各ファイルに対する処理を書く
     spkr_id = spkr_age_record[0]
@@ -33,7 +38,8 @@ for spkr_age_record in age_file_list:
     spkr_folder = wave_file_folder + '/SPEAKER' + spkr_id 
     wav_file_list = os.listdir(spkr_folder)
     for wav_fn in wav_file_list:
-        print(wav_fn,age1)
+        # ここで1ファイルの処理の関数を使う
+        process_single_wav_file(spkr_folder,wav_fn,age1)
 
 
 print('done')
