@@ -84,10 +84,11 @@ plt.plot(f0_modified, linewidth=3, color="red", label="F0_modified contour")
 plt.legend(fontsize=10)
 plt.show()
 
-f0_array = np.asarray(f0_modified)
-synthesized = pw.synthesize(f0_array, sp, ap, sr)
-synthesized_normalized = synthesized/(np.nanmax(np.abs(synthesized)))
-sf.write("./output.wav",synthesized_normalized,16000)
+
+# f0_array = np.asarray(f0_modified)
+# synthesized = pw.synthesize(f0_array, sp, ap, sr)
+# synthesized_normalized = synthesized/(np.nanmax(np.abs(synthesized)))
+# sf.write("./output.wav",synthesized_normalized,16000)
 
 
 # 基本周波数（F0）の補間
@@ -192,3 +193,13 @@ pro_interap = pw.d4c(y, pro_interf0, _time, sr)
 synthesized = pw.synthesize(pro_interf0, pro_intersp , pro_interap, sr)
 synthesized_normalized = synthesized/(np.nanmax(np.abs(synthesized)))
 sf.write(pro_inter_file,synthesized_normalized,16000)
+
+
+# flat voice
+con_interf0 = pro_interf0
+con_interf0[con_interf0 != 0] = 200.0
+con_inter_file = "./con-interpolation.wav"
+
+synthesized = pw.synthesize(con_interf0, pro_intersp , pro_interap, sr)
+synthesized_normalized = synthesized/(np.nanmax(np.abs(synthesized)))
+sf.write(con_inter_file,synthesized_normalized,16000)
