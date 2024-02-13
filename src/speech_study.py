@@ -21,17 +21,20 @@ wave_file_folder = "../slr101/speechocean762/WAVE"
 # 波形図を描く
 sr, y = wavfile.read(wave_file_folder + '/./' + filename)     # 周波数と振幅値の抽出
 x = [q/sr for q in np.arange(0, len(y), 1)]
+plt.figure(0)
 plt.plot(x,y, color="blue")
 plt.show()
 
 # スペクトログラムを描く
+plt.figure(1)
 plt.specgram(y,Fs=sr)     # スペクトログラムを描く
 plt.xlabel('Time')
 plt.ylabel('Frequency')
 plt.show()
 
 # 基本周波数（F0）抽出
-y = y.astype(np.float)
+plt.figure(2)
+y = y.astype(np.float64)
 _f0, _time = pw.dio(y, sr)
 f0 = pw.stonemask(y, _f0, _time, sr)
 plt.plot(f0, linewidth=3, color="green", label="F0 contour")
@@ -39,6 +42,7 @@ plt.legend(fontsize=10)
 plt.show()
 
 # 基本周波数（F0）の調整
+plt.figure(3)
 f0_scaler = -4.5   ## 抑揚を強める場合、プラスに、弱める場合、マイナスにします
 f0_mean = np.mean([x for x in f0 if x!=0])
 f0_std = np.std([x for x in f0 if x!=0])
@@ -87,6 +91,7 @@ sf.write("./output.wav",synthesized_normalized,16000)
 
 
 # 基本周波数（F0）の補間
+plt.figure(4)
 pre_inter_file = "pre-interpolation.wav"
 pre_interf0 = f0
 for i in range(150, 170):
