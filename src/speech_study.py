@@ -93,7 +93,7 @@ plt.show()
 
 # 基本周波数（F0）の補間
 plt.figure(4)
-pre_inter_file = "pre-interpolation.wav"
+pre_inter_file = "../tmp/pre-interpolation.wav"
 pre_interf0 = f0
 for i in range(150, 170):
   pre_interf0[i] = 0
@@ -177,7 +177,7 @@ class Interpolator():
         self.end_flag = -1
         self.y_interpolated = []
 
-pro_inter_file = "./pro-interpolation.wav"
+pro_inter_file = "../tmp/pro-interpolation.wav"
 a = Interpolator(pre_interf0.tolist())
 a.pre_interpolate_points()
 pro_interf0 = np.array(a.ip_curve())
@@ -198,7 +198,7 @@ sf.write(pro_inter_file,synthesized_normalized,16000)
 # flat voice
 con_interf0 = pro_interf0
 con_interf0[con_interf0 != 0] = 200.0
-con_inter_file = "./con-interpolation.wav"
+con_inter_file = "../tmp/con-interpolation.wav"
 
 synthesized = pw.synthesize(con_interf0, pro_intersp , pro_interap, sr)
 synthesized_normalized = synthesized/(np.nanmax(np.abs(synthesized)))
