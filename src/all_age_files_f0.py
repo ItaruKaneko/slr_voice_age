@@ -29,7 +29,13 @@ def process_single_wav_file(folder1,fn1, age1):
     plt.figure(0)
     plt.plot(x,y, color="blue")
     plt.show()
-
+    plt.figure(2)
+    y = y.astype(np.float64)
+    _f0, _time = pw.dio(y, sr)
+    f0 = pw.stonemask(y, _f0, _time, sr)
+    plt.plot(f0, linewidth=3, color="green", label="F0 contour")
+    plt.legend(fontsize=10)
+    plt.show()
 
 # 現在のフォルダを表示した後指定したフォルダから情報を読み込む
 print('corrent directory : ' , os.getcwd())
