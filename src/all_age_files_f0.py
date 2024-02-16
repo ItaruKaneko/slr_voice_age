@@ -25,10 +25,10 @@ def process_single_wav_file(folder1,fn1, age1):
     print(fn1, age1, sz1)
 
     sr, y = wavfile.read(folder1 + '/' + fn1)     # 周波数と振幅値の抽出
-    x = [q/sr for q in np.arange(0, len(y), 1)]
-    plt.figure(0)
-    plt.plot(x,y, color="blue")
-    plt.show()
+    # x = [q/sr for q in np.arange(0, len(y), 1)]
+    # plt.figure(0)
+    # plt.plot(x,y, color="blue")
+    # plt.show()
     plt.figure(2)
     y = y.astype(np.float64)
     _f0, _time = pw.dio(y, sr)
