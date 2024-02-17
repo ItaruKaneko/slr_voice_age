@@ -1,5 +1,5 @@
 # all_age_files_f0.py improved version
-# concatenate all wav files and apply fft
+# concatenate all wav files and apply fft <- this has not beem implemented yet
 
 import os
 import pyworld as pw
