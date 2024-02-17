@@ -1,5 +1,6 @@
 # all_age_files_f0.py improved version
 # concatenate all wav files and apply fft <- this has not beem implemented yet
+# may be it is wrong way. all f0 for single speaker should be concatenated <-- to be fixed
 
 import os
 import pyworld as pw
@@ -24,7 +25,7 @@ def read_tab_separated_file(filename):
             data.append(split_line)
     return data
 
-def process_single_wav_file(pass1,folder1,fn1, age1,f0_env_fs):
+def process_single_wav_file(pass1,folder1,fn1, age1,f0_buf, f0_bp):
     sz1 = os.path.getsize(folder1 + '/' + fn1)
     n_frame = int(((sz1-44)+16000*2/200)*200/16000/2) # estimation of frame rate
     # assumption sampling rate = 16000, header size = 44
@@ -44,7 +45,9 @@ def process_single_wav_file(pass1,folder1,fn1, age1,f0_env_fs):
         f0 = pw.stonemask(y1, _f0, _time, sr)
         if f0.shape[0] > n_frame:
             raise ValueError("estimated n_frame mismatch")
-        plt.plot(f0)
+        sz2 = len(f0)
+        f0_buf[f0_bp:f0_bp+sz2] = f0
+        plt.plot(f0_buf[0:2000])
         # plt.legend(fontsize=10)
         plt.show()
     else:
@@ -55,11 +58,10 @@ def process_all_age_file_list(age_file_table,):
     # process pass 1 and pass 2 for all files
     plt.figure(2)
     plt.plot(linewidth=1, color="green", label="F0 contour")
-    fulllen1 = 0
+    full_len = 0
     for pass1 in range(1,3):    # pass1 ==1 and pass1 == 2
-        if max_fulllen < fulllen1:
-            raise ValueError("fulllen overflow")
-        f0_env_fs = np.zeros(fulllen1)
+        f0_buf = np.zeros(full_len)
+        f0_bp = 0
         for spkr_age_record in age_file_table[1:20]:
             # process the speaker specified by spkr_age_record
             spkr_id = spkr_age_record[0]  # speaker number
@@ -70,10 +72,13 @@ def process_all_age_file_list(age_file_table,):
             wav_file_list = os.listdir(spkr_folder)
             for wav_fn in wav_file_list:
                 # ここで1ファイルの処理の関数を使う
-                len1 = process_single_wav_file(pass1,spkr_folder,wav_fn,age1,f0_env_fs)
-                fulllen1 += len1
-                print(spkr_id, wav_fn, age1, len1, fulllen1)
-        print('maxlen1 = ', fulllen1)
+                len1 = process_single_wav_file(pass1,spkr_folder,wav_fn,age1,f0_buf, f0_bp)
+                if max_fulllen < f0_bp + len1:
+                    raise ValueError("fulllen overflow")
+                print(spkr_id, wav_fn, age1, len1, f0_bp)
+                f0_bp += len1
+        full_len = f0_bp
+        print('full_len = ', f0_bp)
 
 # 現在のフォルダを表示した後指定したフォルダから情報を読み込む
 print('corrent directory : ' , os.getcwd())
