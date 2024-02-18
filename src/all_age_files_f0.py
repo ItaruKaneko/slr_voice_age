@@ -15,14 +15,19 @@ import matplotlib.pyplot as plt
 import soundfile as sf
 from scipy.interpolate  import interp1d
 from scipy.io import wavfile
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import Lasso
+from sklearn.linear_model import ARDRegression
+from sklearn.neural_network import MLPRegressor
 
 # ファイル名を指定
 train_file_list_filename = "../slr101/speechocean762/train/spk2age"
 test_file_list_filename = "../slr101/speechocean762/test/spk2age"
 wave_file_folder = "../slr101/speechocean762/WAVE"
-buf_len = 50000 # size of f0 enverope frequency spectrum
-n_data = 20    # number of data
-n_fline = 200  # number of frequency line to be analyzed
+buf_len = 100000 # size of f0 enverope frequency spectrum
+n_data = 125    # number of data
+n_fline= 200  # number of frequency line to be analyzed
 
 # tab 区切りの表をファイルから読み込み、リストのリストで返す
 def read_tab_separated_file(filename):
@@ -75,7 +80,8 @@ def process_single_speaker(pass1,spkr_id1):
     if pass1 == 2:
         f0fft1 = np.fft.fft(f0_buf)
         f0pwr_spectrum = np.abs(f0fft1) ** 2
-        f0lsp200 = f0pwr_spectrum[24801:25001]
+        f0niquist = len(f0pwr_spectrum) // 2
+        f0lsp200 = f0pwr_spectrum[f0niquist-n_fline+1:f0niquist+1]
         return(f0_bp,f0lsp200)
     else:
         return(f0_bp,0)
@@ -91,7 +97,7 @@ def process_all_train_data(age_file_table):
     age_tbl = np.zeros(n_data, dtype=float)
     for pass1 in range(1,3):    # pass1 ==1 and pass1 == 2
         print('pass1 = ', pass1)
-        for table_ix in range(1,n_data):
+        for table_ix in range(0,n_data):
             spkr_age_record = age_file_table[table_ix]
             if pass1 < 3:
                 spkr_id1 = spkr_age_record[0]  # speaker number
@@ -149,14 +155,39 @@ mtrain,xtrain = process_all_train_data(train_file_table)
 test_file_table = read_tab_separated_file(test_file_list_filename)
 mtest,xtest = process_all_test_data(test_file_table)
 
-# linear regression and prediction 1
-coef1 = np.linalg.lstsq(mtrain,xtrain, rcond=None)[0]
-pred1 = mtrain.dot(coef1)
-plt.figure(4)
-plt.scatter(xtest,pred1)
-plt.show()
+# analysis and prediction
+for method1 in range(1,5):
+    if method1==1:
+        method_name = 'Linear Regerssion'
+        model1= LinearRegression()
+        model1.fit(mtrain,xtrain)
+        ypred = model1.predict(mtest)
+    elif method1==2:
+        method_name = 'Random Forest Regression'
+        model1= RandomForestRegressor()
+        model1.fit(mtrain,xtrain)
+        ypred = model1.predict(mtest)
+    elif method1==3:
+        method_name = 'Lasso Regression'
+        model1= Lasso()
+        model1.fit(mtrain,xtrain)
+        ypred = model1.predict(mtest)
+    elif method1==4:
+        method_name = 'MLP Regoresso'
+        model1= MLPRegressor(hidden_layer_sizes=(10,), max_iter=1000)
+        model1.fit(mtrain,xtrain)
+        ypred = model1.predict(mtest)
+    else:
+        raise ValueError("method1 error")
 
-#
+    # not good
+    #   method_name = 'Automatic Relevance Determination Regression'
 
+    plt.figure(method1)
+    plt.xlabel('True value')
+    plt.ylabel('Predicted value')
+    plt.title(method_name)
+    plt.scatter(xtest,ypred)
+    plt.show()
 
-print('done')
+print('end')
