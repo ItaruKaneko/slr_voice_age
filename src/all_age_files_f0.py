@@ -17,7 +17,8 @@ from scipy.interpolate  import interp1d
 from scipy.io import wavfile
 
 # ファイル名を指定
-age_file_list_filename = "../slr101/speechocean762/test/spk2age"
+train_file_list_filename = "../slr101/speechocean762/train/spk2age"
+test_file_list_filename = "../slr101/speechocean762/test/spk2age"
 wave_file_folder = "../slr101/speechocean762/WAVE"
 buf_len = 50000 # size of f0 enverope frequency spectrum
 n_data = 20    # number of data
@@ -52,8 +53,6 @@ def process_single_wav_file(pass1,folder1,fn1, f0_buf, f0_bp):
             raise ValueError("estimated n_frame mismatch")
         sz2 = len(f0)
         f0_buf[f0_bp:f0_bp+sz2] = f0
-        # plt.plot(f0_buf[0:2000])
-        # plt.show()
     else:
         raise ValueError("pass1 should be 1 or 2")
     return(n_frame)
@@ -77,18 +76,13 @@ def process_single_speaker(pass1,spkr_id1):
         f0fft1 = np.fft.fft(f0_buf)
         f0pwr_spectrum = np.abs(f0fft1) ** 2
         f0lsp200 = f0pwr_spectrum[24801:25001]
-        plt.figure(1)
-        plt.plot(f0lsp200)
-        plt.show()
         return(f0_bp,f0lsp200)
     else:
         return(f0_bp,0)
 
 
-def process_all_age_file_list(age_file_table,):
+def process_all_train_data(age_file_table):
     # process pass 1 and pass 2 for all files
-    plt.figure(2)
-    plt.plot(linewidth=1, color="green", label="F0 contour")
     # all_max1
     #  - maximum lenght in all speakers are determined in pass 1 and then kept through pass 2
     all_max1 = 0
@@ -116,20 +110,51 @@ def process_all_age_file_list(age_file_table,):
     coefficients = np.linalg.lstsq(m,x, rcond=None)[0]
     return(coefficients)
 
+def process_all_test_data(age_file_table,lrcoef1):
+    # process pass 1 and pass 2 for all files
+    # all_max1
+    #  - maximum lenght in all speakers are determined in pass 1 and then kept through pass 2
+    all_max1 = 0
+    fft_buf1 = np.zeros(buf_len)
+    f0lsp_tbl = np.zeros((n_data,n_fline), dtype = float)
+    age_tbl = np.zeros(n_data, dtype=float)
+    for pass1 in range(1,3):    # pass1 ==1 and pass1 == 2
+        print('pass1 = ', pass1)
+        for table_ix in range(1,n_data):
+            spkr_age_record = age_file_table[table_ix]
+            if pass1 < 3:
+                spkr_id1 = spkr_age_record[0]  # speaker number
+                age_tbl[table_ix] = int(spkr_age_record[1]) # age of the speaker
+                spkr_max1, f0lsp_tbl[table_ix] = process_single_speaker(pass1,spkr_id1)
+                if all_max1 < spkr_max1:
+                    all_max1 = spkr_max1
+                print('max_len_in_all_spkr', spkr_max1, all_max1)
+            elif pass1 == 3:
+                pass
+            else:
+                raise ValueError("pass1 error")
+    x = age_tbl
+    m = f0lsp_tbl
+    # calucualate linear regression coefficients
+    pred1 = m.dot(lrcoef1)
+    plt.figure(4)
+    plt.scatter(x,pred1)
+    plt.show()
+
 # 現在のフォルダを表示した後指定したフォルダから情報を読み込む
 print('corrent directory : ' , os.getcwd())
-print('reading ', age_file_list_filename, '...')
-age_file_table = read_tab_separated_file(age_file_list_filename)
+print('reading ', train_file_list_filename, '...')
+train_file_table = read_tab_separated_file(train_file_list_filename)
 
 # データの確認
-print(len(age_file_table) , ' data had been raead.')
+print(len(train_file_table) , ' data had been raead.')
 
-coef1 = process_all_age_file_list(age_file_table)
+coef1 = process_all_train_data(train_file_table)
 plt.figure(3)
 plt.plot(coef1)
 plt.show()
 
-# test_file_table = read_tab_separated_file(test_file_list_filename)
-# predict_test_files(test_file_table)
+test_file_table = read_tab_separated_file(test_file_list_filename)
+process_all_test_data(test_file_table,coef1)
 
 print('done')
