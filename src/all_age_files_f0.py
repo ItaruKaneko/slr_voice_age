@@ -20,14 +20,20 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Lasso
 from sklearn.linear_model import ARDRegression
 from sklearn.neural_network import MLPRegressor
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
 
 # ファイル名を指定
 train_file_list_filename = "../slr101/speechocean762/train/spk2age"
 test_file_list_filename = "../slr101/speechocean762/test/spk2age"
 wave_file_folder = "../slr101/speechocean762/WAVE"
-buf_len = 100000 # size of f0 enverope frequency spectrum
-n_data = 125    # number of data
-n_fline= 200  # number of frequency line to be analyzed
+buf_len = 50000 # size of f0 enverope frequency spectrum
+n_data = 10    # number of data
+n_fline= 500  # number of frequency line to be analyzed
+
+# buf_len = 100000 # size of f0 enverope frequency spectrum
+# n_data = 125    # number of data
+# n_fline= 1000  # number of frequency line to be analyzed
 
 # tab 区切りの表をファイルから読み込み、リストのリストで返す
 def read_tab_separated_file(filename):
@@ -150,44 +156,41 @@ train_file_table = read_tab_separated_file(train_file_list_filename)
 # データの確認
 print(len(train_file_table) , ' data had been raead.')
 
-mtrain,xtrain = process_all_train_data(train_file_table)
+X_train,y_train = process_all_train_data(train_file_table)
 
 test_file_table = read_tab_separated_file(test_file_list_filename)
-mtest,xtest = process_all_test_data(test_file_table)
+X_test,y_test = process_all_test_data(test_file_table)
 
 # analysis and prediction
-for method1 in range(1,5):
+for method1 in range(1,4):
     if method1==1:
         method_name = 'Linear Regerssion'
         model1= LinearRegression()
-        model1.fit(mtrain,xtrain)
-        ypred = model1.predict(mtest)
     elif method1==2:
         method_name = 'Random Forest Regression'
         model1= RandomForestRegressor()
-        model1.fit(mtrain,xtrain)
-        ypred = model1.predict(mtest)
     elif method1==3:
         method_name = 'Lasso Regression'
         model1= Lasso()
-        model1.fit(mtrain,xtrain)
-        ypred = model1.predict(mtest)
     elif method1==4:
         method_name = 'MLP Regoresso'
         model1= MLPRegressor(hidden_layer_sizes=(10,), max_iter=1000)
-        model1.fit(mtrain,xtrain)
-        ypred = model1.predict(mtest)
     else:
         raise ValueError("method1 error")
 
     # not good
     #   method_name = 'Automatic Relevance Determination Regression'
+    model1.fit(X_train,y_train)
+    y_pred = model1.predict(X_test)
+    mse = mean_squared_error(y_test, y_pred)
+    r2 = r2_score(y_test, y_pred)
 
     plt.figure(method1)
     plt.xlabel('True value')
     plt.ylabel('Predicted value')
     plt.title(method_name)
-    plt.scatter(xtest,ypred)
+    plt.scatter(y_test,y_pred)
     plt.show()
+    # MSEとR²スコアを計算
 
 print('end')
