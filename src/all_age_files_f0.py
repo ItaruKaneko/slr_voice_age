@@ -25,7 +25,7 @@ def read_tab_separated_file(filename):
             data.append(split_line)
     return data
 
-def process_single_wav_file(pass1,folder1,fn1, age1,f0_buf, f0_bp):
+def process_single_wav_file(pass1,folder1,fn1, f0_buf, f0_bp):
     sz1 = os.path.getsize(folder1 + '/' + fn1)
     n_frame = int(((sz1-44)+16000*2/200)*200/16000/2) # estimation of frame rate
     # assumption sampling rate = 16000, header size = 44
@@ -50,26 +50,25 @@ def process_single_wav_file(pass1,folder1,fn1, age1,f0_buf, f0_bp):
         raise ValueError("pass1 should be 1 or 2")
     return(n_frame)
 
-def process_single_speaker(pass1,spkr_age_record):
+def process_single_speaker(pass1,spkr_id1):
     # process the speaker specified by spkr_age_record
     f0_buf = np.zeros(buf_len)
-    spkr_id = spkr_age_record[0]  # speaker number
-    age1 = int(spkr_age_record[1]) # age of the speaker
     # construct folder path
-    spkr_folder = wave_file_folder + '/SPEAKER' + spkr_id 
+    spkr_folder = wave_file_folder + '/SPEAKER' + spkr_id1 
     # open wave file
     wav_file_list = os.listdir(spkr_folder)
     f0_bp = 0
     for wav_fn in wav_file_list:
         # ここで1ファイルの処理の関数を使う
-        len1 = process_single_wav_file(pass1,spkr_folder,wav_fn,age1,f0_buf,f0_bp)
+        len1 = process_single_wav_file(pass1,spkr_folder,wav_fn,f0_buf,f0_bp)
         if buf_len < f0_bp + len1:
             raise ValueError("buf_len overflow")
         # print(spkr_id, wav_fn, age1, len1, f0_bp)
         f0_bp += len1
     if pass1 == 2:
         f0fft1 = np.fft.fft(f0_buf)
-        return(f0_bp,f0fft1)
+        f0pwr_spectrum = np.abs(f0fft1) ** 2
+        return(f0_bp,f0pwr_spectrum)
     else:
         return(f0_bp,0)
 
@@ -84,11 +83,19 @@ def process_all_age_file_list(age_file_table,):
     fft_buf1 = np.zeros(buf_len)
     for pass1 in range(1,3):    # pass1 ==1 and pass1 == 2
         print('pass1 = ', pass1)
-        for spkr_age_record in age_file_table[1:20]:
-            spkr_max1,f0fft1 = process_single_speaker(pass1,spkr_age_record)
-            if all_max1 < spkr_max1:
-                all_max1 = spkr_max1
-            print('max_len_in_all_spkr', spkr_max1, all_max1)
+        for table_ix in range(1,20):
+            spkr_age_record = age_file_table[table_ix]
+            if pass1 < 3:
+                spkr_id1 = spkr_age_record[0]  # speaker number
+                age1 = int(spkr_age_record[1]) # age of the speaker
+                spkr_max1,f0pwr_spectrum = process_single_speaker(pass1,spkr_id1)
+                if all_max1 < spkr_max1:
+                    all_max1 = spkr_max1
+                print('max_len_in_all_spkr', spkr_max1, all_max1)
+            elif pass1 == 3:
+                pass
+            else:
+                raise ValueError("pass1 error")
 
 # 現在のフォルダを表示した後指定したフォルダから情報を読み込む
 print('corrent directory : ' , os.getcwd())
