@@ -1,4 +1,5 @@
 # all_age_files_f0.py
+# This version calculate linear regression coef correctly
 # calculate f0 waveform of each wav file in 200 samples/sec
 # concatenate all f0 coutour in each speaker
 # apply fft and calculate power spectrumin f0pwr_spectrum
@@ -93,13 +94,14 @@ def process_all_age_file_list(age_file_table,):
     all_max1 = 0
     fft_buf1 = np.zeros(buf_len)
     f0lsp_tbl = np.zeros((n_data,n_fline), dtype = float)
-    for pass1 in range(1,2):    # pass1 ==1 and pass1 == 2
+    age_tbl = np.zeros(n_data, dtype=float)
+    for pass1 in range(1,3):    # pass1 ==1 and pass1 == 2
         print('pass1 = ', pass1)
         for table_ix in range(1,n_data):
             spkr_age_record = age_file_table[table_ix]
             if pass1 < 3:
                 spkr_id1 = spkr_age_record[0]  # speaker number
-                age1 = int(spkr_age_record[1]) # age of the speaker
+                age_tbl[table_ix] = int(spkr_age_record[1]) # age of the speaker
                 spkr_max1, f0lsp_tbl[table_ix] = process_single_speaker(pass1,spkr_id1)
                 if all_max1 < spkr_max1:
                     all_max1 = spkr_max1
@@ -108,6 +110,11 @@ def process_all_age_file_list(age_file_table,):
                 pass
             else:
                 raise ValueError("pass1 error")
+    x = age_tbl
+    m = f0lsp_tbl
+    # calucualate linear regression coefficients
+    coefficients = np.linalg.lstsq(m,x, rcond=None)[0]
+    return(coefficients)
 
 # 現在のフォルダを表示した後指定したフォルダから情報を読み込む
 print('corrent directory : ' , os.getcwd())
@@ -117,6 +124,12 @@ age_file_table = read_tab_separated_file(age_file_list_filename)
 # データの確認
 print(len(age_file_table) , ' data had been raead.')
 
-process_all_age_file_list(age_file_table)
+coef1 = process_all_age_file_list(age_file_table)
+plt.figure(3)
+plt.plot(coef1)
+plt.show()
+
+# test_file_table = read_tab_separated_file(test_file_list_filename)
+# predict_test_files(test_file_table)
 
 print('done')
