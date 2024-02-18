@@ -68,6 +68,9 @@ def process_single_speaker(pass1,spkr_id1):
     if pass1 == 2:
         f0fft1 = np.fft.fft(f0_buf)
         f0pwr_spectrum = np.abs(f0fft1) ** 2
+        plt.figure(1)
+        plt.plot(f0pwr_spectrum[24950:25050])
+        plt.show()
         return(f0_bp,f0pwr_spectrum)
     else:
         return(f0_bp,0)
