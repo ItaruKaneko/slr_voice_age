@@ -1,6 +1,11 @@
-# all_age_files_f0.py improved version
-# concatenate all wav files and apply fft <- this has not beem implemented yet
-# may be it is wrong way. all f0 for single speaker should be concatenated <-- to be fixed
+# all_age_files_f0.py
+# calculate f0 waveform of each wav file in 200 samples/sec
+# concatenate all f0 coutour in each speaker
+# apply fft and calculate power spectrumin f0pwr_spectrum
+#
+# todo
+# construct matrix of 200 samples of power spectrum (1Hz to 200Hz)
+# apply linear regression
 
 import os
 import pyworld as pw
@@ -14,6 +19,8 @@ from scipy.io import wavfile
 age_file_list_filename = "../slr101/speechocean762/test/spk2age"
 wave_file_folder = "../slr101/speechocean762/WAVE"
 buf_len = 50000 # size of f0 enverope frequency spectrum
+n_data = 20    # number of data
+n_fline = 200  # number of frequency line to be analyzed
 
 # tab 区切りの表をファイルから読み込み、リストのリストで返す
 def read_tab_separated_file(filename):
@@ -68,10 +75,11 @@ def process_single_speaker(pass1,spkr_id1):
     if pass1 == 2:
         f0fft1 = np.fft.fft(f0_buf)
         f0pwr_spectrum = np.abs(f0fft1) ** 2
+        f0lsp200 = f0pwr_spectrum[24801:25001]
         plt.figure(1)
-        plt.plot(f0pwr_spectrum[24950:25050])
+        plt.plot(f0lsp200)
         plt.show()
-        return(f0_bp,f0pwr_spectrum)
+        return(f0_bp,f0lsp200)
     else:
         return(f0_bp,0)
 
@@ -84,14 +92,15 @@ def process_all_age_file_list(age_file_table,):
     #  - maximum lenght in all speakers are determined in pass 1 and then kept through pass 2
     all_max1 = 0
     fft_buf1 = np.zeros(buf_len)
-    for pass1 in range(1,3):    # pass1 ==1 and pass1 == 2
+    f0lsp_tbl = np.zeros((n_data,n_fline), dtype = float)
+    for pass1 in range(1,2):    # pass1 ==1 and pass1 == 2
         print('pass1 = ', pass1)
-        for table_ix in range(1,20):
+        for table_ix in range(1,n_data):
             spkr_age_record = age_file_table[table_ix]
             if pass1 < 3:
                 spkr_id1 = spkr_age_record[0]  # speaker number
                 age1 = int(spkr_age_record[1]) # age of the speaker
-                spkr_max1,f0pwr_spectrum = process_single_speaker(pass1,spkr_id1)
+                spkr_max1, f0lsp_tbl[table_ix] = process_single_speaker(pass1,spkr_id1)
                 if all_max1 < spkr_max1:
                     all_max1 = spkr_max1
                 print('max_len_in_all_spkr', spkr_max1, all_max1)
