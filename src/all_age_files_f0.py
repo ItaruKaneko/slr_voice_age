@@ -27,9 +27,9 @@ from sklearn.metrics import mean_squared_error, r2_score
 train_file_list_filename = "../slr101/speechocean762/train/spk2age"
 test_file_list_filename = "../slr101/speechocean762/test/spk2age"
 wave_file_folder = "../slr101/speechocean762/WAVE"
-buf_len = 50000 # size of f0 enverope frequency spectrum
-n_data = 10    # number of data
-n_fline= 500  # number of frequency line to be analyzed
+buf_len = 100000 # size of f0 enverope frequency spectrum
+n_data = 125    # number of data
+n_fline= 10000  # number of frequency line to be analyzed
 
 # buf_len = 100000 # size of f0 enverope frequency spectrum
 # n_data = 125    # number of data
@@ -184,6 +184,8 @@ for method1 in range(1,4):
     y_pred = model1.predict(X_test)
     mse = mean_squared_error(y_test, y_pred)
     r2 = r2_score(y_test, y_pred)
+    print('mse = ',mse)
+    print('r2 = ',r2)
 
     plt.figure(method1)
     plt.xlabel('True value')
