@@ -54,6 +54,23 @@ def process_single_wav_file(pass1,folder1,fn1, age1,f0_buf, f0_bp):
         raise ValueError("pass1 should be 1 or 2")
     return(n_frame)
 
+def process_single_speaker(pass1,spkr_age_record,f0_buf,f0_bp):
+    # process the speaker specified by spkr_age_record
+    spkr_id = spkr_age_record[0]  # speaker number
+    age1 = int(spkr_age_record[1]) # age of the speaker
+    # construct folder path
+    spkr_folder = wave_file_folder + '/SPEAKER' + spkr_id 
+    # open wave file
+    wav_file_list = os.listdir(spkr_folder)
+    for wav_fn in wav_file_list:
+        # ここで1ファイルの処理の関数を使う
+        len1 = process_single_wav_file(pass1,spkr_folder,wav_fn,age1,f0_buf, f0_bp)
+        if max_fulllen < f0_bp + len1:
+            raise ValueError("fulllen overflow")
+        print(spkr_id, wav_fn, age1, len1, f0_bp)
+        f0_bp += len1
+    return(f0_bp)
+
 def process_all_age_file_list(age_file_table,):
     # process pass 1 and pass 2 for all files
     plt.figure(2)
@@ -63,20 +80,7 @@ def process_all_age_file_list(age_file_table,):
         f0_buf = np.zeros(full_len)
         f0_bp = 0
         for spkr_age_record in age_file_table[1:20]:
-            # process the speaker specified by spkr_age_record
-            spkr_id = spkr_age_record[0]  # speaker number
-            age1 = int(spkr_age_record[1]) # age of the speaker
-            # construct folder path
-            spkr_folder = wave_file_folder + '/SPEAKER' + spkr_id 
-            # open wave file
-            wav_file_list = os.listdir(spkr_folder)
-            for wav_fn in wav_file_list:
-                # ここで1ファイルの処理の関数を使う
-                len1 = process_single_wav_file(pass1,spkr_folder,wav_fn,age1,f0_buf, f0_bp)
-                if max_fulllen < f0_bp + len1:
-                    raise ValueError("fulllen overflow")
-                print(spkr_id, wav_fn, age1, len1, f0_bp)
-                f0_bp += len1
+            f0_bp = process_single_speaker(pass1,spkr_age_record,f0_buf,f0_bp)
         full_len = f0_bp
         print('full_len = ', f0_bp)
 
