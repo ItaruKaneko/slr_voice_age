@@ -106,11 +106,9 @@ def process_all_train_data(age_file_table):
                 raise ValueError("pass1 error")
     x = age_tbl
     m = f0lsp_tbl
-    # calucualate linear regression coefficients
-    coefficients = np.linalg.lstsq(m,x, rcond=None)[0]
-    return(coefficients)
+    return(m,x)
 
-def process_all_test_data(age_file_table,lrcoef1):
+def process_all_test_data(age_file_table):
     # process pass 1 and pass 2 for all files
     # all_max1
     #  - maximum lenght in all speakers are determined in pass 1 and then kept through pass 2
@@ -136,10 +134,7 @@ def process_all_test_data(age_file_table,lrcoef1):
     x = age_tbl
     m = f0lsp_tbl
     # calucualate linear regression coefficients
-    pred1 = m.dot(lrcoef1)
-    plt.figure(4)
-    plt.scatter(x,pred1)
-    plt.show()
+    return(m,x)
 
 # 現在のフォルダを表示した後指定したフォルダから情報を読み込む
 print('corrent directory : ' , os.getcwd())
@@ -149,12 +144,19 @@ train_file_table = read_tab_separated_file(train_file_list_filename)
 # データの確認
 print(len(train_file_table) , ' data had been raead.')
 
-coef1 = process_all_train_data(train_file_table)
-plt.figure(3)
-plt.plot(coef1)
-plt.show()
+mtrain,xtrain = process_all_train_data(train_file_table)
 
 test_file_table = read_tab_separated_file(test_file_list_filename)
-process_all_test_data(test_file_table,coef1)
+mtest,xtest = process_all_test_data(test_file_table)
+
+# linear regression and prediction 1
+coef1 = np.linalg.lstsq(mtrain,xtrain, rcond=None)[0]
+pred1 = mtrain.dot(coef1)
+plt.figure(4)
+plt.scatter(xtest,pred1)
+plt.show()
+
+#
+
 
 print('done')
