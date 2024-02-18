@@ -67,7 +67,12 @@ def process_single_speaker(pass1,spkr_age_record):
             raise ValueError("buf_len overflow")
         # print(spkr_id, wav_fn, age1, len1, f0_bp)
         f0_bp += len1
-    np.fft.
+    if pass1 == 2:
+        f0fft1 = np.fft.fft(f0_buf)
+        return(f0_bp,f0fft1)
+    else:
+        return(f0_bp,0)
+
 
 def process_all_age_file_list(age_file_table,):
     # process pass 1 and pass 2 for all files
@@ -76,10 +81,11 @@ def process_all_age_file_list(age_file_table,):
     # all_max1
     #  - maximum lenght in all speakers are determined in pass 1 and then kept through pass 2
     all_max1 = 0
+    fft_buf1 = np.zeros(buf_len)
     for pass1 in range(1,3):    # pass1 ==1 and pass1 == 2
         print('pass1 = ', pass1)
         for spkr_age_record in age_file_table[1:20]:
-            spkr_max1 = process_single_speaker(pass1,spkr_age_record)
+            spkr_max1,f0fft1 = process_single_speaker(pass1,spkr_age_record)
             if all_max1 < spkr_max1:
                 all_max1 = spkr_max1
             print('max_len_in_all_spkr', spkr_max1, all_max1)
