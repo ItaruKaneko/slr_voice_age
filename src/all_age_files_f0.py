@@ -27,13 +27,13 @@ from sklearn.metrics import mean_squared_error, r2_score
 train_file_list_filename = "../slr101/speechocean762/train/spk2age"
 test_file_list_filename = "../slr101/speechocean762/test/spk2age"
 wave_file_folder = "../slr101/speechocean762/WAVE"
-buf_len = 100000 # size of f0 enverope frequency spectrum
-n_data = 125    # number of data
-n_fline= 10000  # number of frequency line to be analyzed
+buf_len = 50000 # size of f0 enverope frequency spectrum
+n_data = 10    # number of data
+n_fline= 100  # number of frequency line to be analyzed
 
 # buf_len = 100000 # size of f0 enverope frequency spectrum
 # n_data = 125    # number of data
-# n_fline= 1000  # number of frequency line to be analyzed
+# n_fline= 10000  # number of frequency line to be analyzed
 
 # tab 区切りの表をファイルから読み込み、リストのリストで返す
 def read_tab_separated_file(filename):
@@ -70,7 +70,7 @@ def process_single_wav_file(pass1,folder1,fn1, f0_buf, f0_bp):
 
 def process_single_speaker(pass1,spkr_id1):
     # process the speaker specified by spkr_age_record
-    f0_buf = np.zeros(buf_len)
+    f0= np.zeros(buf_len)
     # construct folder path
     spkr_folder = wave_file_folder + '/SPEAKER' + spkr_id1 
     # open wave file
@@ -78,13 +78,13 @@ def process_single_speaker(pass1,spkr_id1):
     f0_bp = 0
     for wav_fn in wav_file_list:
         # ここで1ファイルの処理の関数を使う
-        len1 = process_single_wav_file(pass1,spkr_folder,wav_fn,f0_buf,f0_bp)
+        len1 = process_single_wav_file(pass1,spkr_folder,wav_fn,f0,f0_bp)
         if buf_len < f0_bp + len1:
             raise ValueError("buf_len overflow")
         # print(spkr_id, wav_fn, age1, len1, f0_bp)
         f0_bp += len1
     if pass1 == 2:
-        f0fft1 = np.fft.fft(f0_buf)
+        f0fft1 = np.fft.fft(f0)
         f0pwr_spectrum = np.abs(f0fft1) ** 2
         f0niquist = len(f0pwr_spectrum) // 2
         f0lsp200 = f0pwr_spectrum[f0niquist-n_fline+1:f0niquist+1]
