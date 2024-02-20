@@ -1,9 +1,9 @@
-# all_age_files_f0.py
+# all_age_files_f0.py version 3
 # This version calculate linear regression coef correctly
 # calculate f0 waveform of each wav file in 200 samples/sec
-# concatenate all f0 coutour in each speaker
+# concatenate all f0 coutour oin each speaker
+# Interporate f0 using scipy.interpolate / interp1d
 # apply fft and calculate power spectrumin f0pwr_spectrum
-#
 # todo
 # construct matrix of 200 samples of power spectrum (1Hz to 200Hz)
 # apply linear regression
@@ -27,13 +27,13 @@ from sklearn.metrics import mean_squared_error, r2_score
 train_file_list_filename = "../slr101/speechocean762/train/spk2age"
 test_file_list_filename = "../slr101/speechocean762/test/spk2age"
 wave_file_folder = "../slr101/speechocean762/WAVE"
-buf_len = 50000 # size of f0 enverope frequency spectrum
-n_data = 10    # number of data
-n_fline= 100  # number of frequency line to be analyzed
+# buf_len = 50000 # size of f0 enverope frequency spectrum
+# n_data = 10    # number of data
+# n_fline= 100  # number of frequency line to be analyzed
 
-# buf_len = 100000 # size of f0 enverope frequency spectrum
-# n_data = 125    # number of data
-# n_fline= 10000  # number of frequency line to be analyzed
+buf_len = 100000 # size of f0 enverope frequency spectrum
+n_data = 125    # number of data
+n_fline= 10000  # number of frequency line to be analyzed
 
 # tab 区切りの表をファイルから読み込み、リストのリストで返す
 def read_tab_separated_file(filename):
@@ -68,22 +68,152 @@ def process_single_wav_file(pass1,folder1,fn1, f0_buf, f0_bp):
         raise ValueError("pass1 should be 1 or 2")
     return(n_frame)
 
-def process_single_speaker(pass1,spkr_id1):
+def f0_tailor(f0):
+    f0_scaler = -4.5   ## 抑揚を強める場合、プラスに、弱める場合、マイナスにします
+    f0_mean = np.mean([x for x in f0 if x!=0])
+    f0_std = np.std([x for x in f0 if x!=0])
+    f0_modified = []
+    for i in f0:
+        # print(i)
+        if i != 0:
+            if f0_scaler > 0:
+                if i > f0_mean:
+                    single_f0_new = i + f0_std * f0_scaler * ((i-f0_mean)/f0_mean)
+                elif i < f0_mean:
+                    i_new = i - f0_std * f0_scaler * ((f0_mean-i)/f0_mean)
+                    if  i_new > 0:
+                        single_f0_new = i_new
+                    else:
+                        single_f0_new = 1          
+                else:
+                    single_f0_new = i
+            else:
+                if i > f0_mean:
+                    i_new = i + f0_std * f0_scaler * ((i-f0_mean)/f0_mean)
+                    if i_new > f0_mean:
+                        single_f0_new = i_new
+                    else:
+                        single_f0_new = f0_mean          
+                elif i < f0_mean:
+                    i_new = i - f0_std * f0_scaler * ((f0_mean-i)/f0_mean)
+                    if  i_new < f0_mean:
+                        single_f0_new = i_new
+                    else:
+                        single_f0_new = f0_mean
+                else:
+                    single_f0_new = i
+        else:
+            single_f0_new = i
+        f0_modified.append(single_f0_new)
+    return(f0_modified)
+
+# F
+class Interpolator():
+    def __init__(self, y_array):
+        self.x_observed = []
+        self.y_observed = []
+        self.x_valid = []
+        self.y_valid = []
+        self.x_to_inter = []
+        self.y_to_inter = []
+        self.start_flag = 0
+        self.end_flag = -1
+        self.y_interpolated = []
+
+        for i in range(len(y_array)):
+            self.x_observed.append(i)
+            self.y_observed.append(y_array[i])
+
+        # get start position (first non-0)
+        for i in range(len(y_array)):
+            if y_array[i] == 0:
+                continue
+            else:
+                self.start_flag = i 
+                break
+        # get end position (last non-0)
+        y_array_ = y_array[::-1]
+        for i in range(len(y_array)):
+            if y_array_[i] == 0:
+                continue
+            else:
+                self.end_flag = -i - 1
+                break
+
+        self.x_valid = self.x_observed[self.start_flag : len(y_array) + self.end_flag]
+        self.y_valid = self.y_observed[self.start_flag : len(y_array) + self.end_flag]
+
+
+    def pre_interpolate_points(self):
+        self.x_to_inter = []
+        self.y_to_inter = []
+        for i in range(len(self.y_valid)):
+            if self.y_valid[i] == 0:
+                continue
+            else:
+                self.x_to_inter.append(self.x_valid[i])
+                self.y_to_inter.append(self.y_valid[i])
+
+    def ip_curve(self):
+        inter_func = interp1d(self.x_to_inter, self.y_to_inter, kind='slinear')
+        # print(type(inter_func(self.x_valid).flatten()))
+        self.y_interpolated = [0]*self.start_flag + inter_func(self.x_valid).flatten().tolist()
+        self.y_interpolated = self.y_interpolated +[0]*(-self.end_flag)
+        return self.y_interpolated
+
+    def clear(self):
+        self.x_observed = []
+        self.y_observed = []
+        self.x_valid = []
+        self.y_valid = []
+        self.x_to_inter = []
+        self.y_to_inter = []
+        self.start_flag = 0
+        self.end_flag = -1
+        self.y_interpolated = []
+
+def interpolate1(pre_interf0):
+    # interpolation
+    # pltw = 2000
+    # plt.plot(pre_interf0[0:pltw], linewidth=1, color="blue", label="pre-interpolation")
+    # plt.legend(fontsize=10)
+    # plt.show()
+    a = Interpolator(pre_interf0.tolist())
+    a.pre_interpolate_points()
+    pro_interf0 = np.array(a.ip_curve())
+    a.clear()
+
+    # plt.plot(pro_interf0[0:pltw], linewidth=1, color="red", label="pro-interpolation")
+    # plt.legend(fontsize=10)
+    # plt.show()
+    return(pro_interf0)
+
+
+def process_single_speaker(pass1,tbl_ix1,spkr_id1):
     # process the speaker specified by spkr_age_record
-    f0= np.zeros(buf_len)
+    f0= np.zeros(buf_len, dtype = float)
+    f0[0:buf_len]=100.0
     # construct folder path
     spkr_folder = wave_file_folder + '/SPEAKER' + spkr_id1 
     # open wave file
     wav_file_list = os.listdir(spkr_folder)
     f0_bp = 0
     for wav_fn in wav_file_list:
+    # for wav_fn in ["010440154.WAV"]:
         # ここで1ファイルの処理の関数を使う
+        print(pass1, tbl_ix1,wav_fn)
         len1 = process_single_wav_file(pass1,spkr_folder,wav_fn,f0,f0_bp)
         if buf_len < f0_bp + len1:
             raise ValueError("buf_len overflow")
         # print(spkr_id, wav_fn, age1, len1, f0_bp)
         f0_bp += len1
+    # f0 contains f0 contour for all wave file of speaker
     if pass1 == 2:
+        # tailor f0 for continuouscontour
+        # f0 = interpolate1(f0)
+        # f0 = f0[0:13000]
+        f0 = interpolate1(f0)
+        # calculate auto correlation
         f0fft1 = np.fft.fft(f0)
         f0pwr_spectrum = np.abs(f0fft1) ** 2
         f0niquist = len(f0pwr_spectrum) // 2
@@ -108,7 +238,7 @@ def process_all_train_data(age_file_table):
             if pass1 < 3:
                 spkr_id1 = spkr_age_record[0]  # speaker number
                 age_tbl[table_ix] = int(spkr_age_record[1]) # age of the speaker
-                spkr_max1, f0lsp_tbl[table_ix] = process_single_speaker(pass1,spkr_id1)
+                spkr_max1, f0lsp_tbl[table_ix] = process_single_speaker(pass1,table_ix,spkr_id1)
                 if all_max1 < spkr_max1:
                     all_max1 = spkr_max1
                 print('max_len_in_all_spkr', spkr_max1, all_max1)
@@ -135,7 +265,7 @@ def process_all_test_data(age_file_table):
             if pass1 < 3:
                 spkr_id1 = spkr_age_record[0]  # speaker number
                 age_tbl[table_ix] = int(spkr_age_record[1]) # age of the speaker
-                spkr_max1, f0lsp_tbl[table_ix] = process_single_speaker(pass1,spkr_id1)
+                spkr_max1, f0lsp_tbl[table_ix] = process_single_speaker(pass1,table_ix,spkr_id1)
                 if all_max1 < spkr_max1:
                     all_max1 = spkr_max1
                 print('max_len_in_all_spkr', spkr_max1, all_max1)
