@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import soundfile as sf
 from scipy.interpolate  import interp1d
 from scipy.io import wavfile
+from scipy import signal
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Lasso
@@ -34,6 +35,7 @@ wave_file_folder = "../slr101/speechocean762/WAVE"
 buf_len = 100000 # size of f0 enverope frequency spectrum
 n_data = 125    # number of data
 n_fline= 10000  # number of frequency line to be analyzed
+n_decim= 1000      # number of decimated samples
 
 # tab 区切りの表をファイルから読み込み、リストのリストで返す
 def read_tab_separated_file(filename):
@@ -217,8 +219,13 @@ def process_single_speaker(pass1,tbl_ix1,spkr_id1):
         f0fft1 = np.fft.fft(f0)
         f0pwr_spectrum = np.abs(f0fft1) ** 2
         f0niquist = len(f0pwr_spectrum) // 2
-        f0lsp200 = f0pwr_spectrum[f0niquist-n_fline+1:f0niquist+1]
-        return(f0_bp,f0lsp200)
+        # f0lsp200 = f0pwr_spectrum[f0niquist-n_fline+1:f0niquist+1]
+        f0high=f0pwr_spectrum[f0niquist-n_fline+1:f0niquist+1]
+        if n_decim == 1:
+            f0decimated = f0high
+        else:
+            f0decimated = signal.decimate(f0high, n_decim, n=None, ftype='iir', axis=-1, zero_phase=True)
+        return(f0_bp,f0decimated)
     else:
         return(f0_bp,0)
 
@@ -229,7 +236,7 @@ def process_all_train_data(age_file_table):
     #  - maximum lenght in all speakers are determined in pass 1 and then kept through pass 2
     all_max1 = 0
     fft_buf1 = np.zeros(buf_len)
-    f0lsp_tbl = np.zeros((n_data,n_fline), dtype = float)
+    f0lsp_tbl = np.zeros((n_data,n_fline//n_decim), dtype = float)
     age_tbl = np.zeros(n_data, dtype=float)
     for pass1 in range(1,3):    # pass1 ==1 and pass1 == 2
         print('pass1 = ', pass1)
@@ -256,7 +263,7 @@ def process_all_test_data(age_file_table):
     #  - maximum lenght in all speakers are determined in pass 1 and then kept through pass 2
     all_max1 = 0
     fft_buf1 = np.zeros(buf_len)
-    f0lsp_tbl = np.zeros((n_data,n_fline), dtype = float)
+    f0lsp_tbl = np.zeros((n_data,n_fline//n_decim), dtype = float)
     age_tbl = np.zeros(n_data, dtype=float)
     for pass1 in range(1,3):    # pass1 ==1 and pass1 == 2
         print('pass1 = ', pass1)
