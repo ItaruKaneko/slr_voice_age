@@ -31,11 +31,17 @@ wave_file_folder = "../slr101/speechocean762/WAVE"
 # buf_len = 50000 # size of f0 enverope frequency spectrum
 # n_data = 10    # number of data
 # n_fline= 100  # number of frequency line to be analyzed
+# n_decim= 5      # number of decimated samples
+
+# buf_len = 100000 # size of f0 enverope frequency spectrum
+# n_data = 125    # number of data
+# n_fline= 10000  # number of frequency line to be analyzed
+# n_decim= 5      # number of decimated samples
 
 buf_len = 100000 # size of f0 enverope frequency spectrum
-n_data = 125    # number of data
+n_data = 10    # number of data
 n_fline= 10000  # number of frequency line to be analyzed
-n_decim= 1000      # number of decimated samples
+n_decim= 20      # number of decimated samples
 
 # tab 区切りの表をファイルから読み込み、リストのリストで返す
 def read_tab_separated_file(filename):
@@ -295,8 +301,18 @@ print(len(train_file_table) , ' data had been raead.')
 
 X_train,y_train = process_all_train_data(train_file_table)
 
+ix_sort = np.argsort(y_train)
+X  = X_train[ix_sort]
+normalized_X = X / X.sum(axis=1, keepdims=True)
+normalized_Xr = X / X.sum(axis=0, keepdims=True)
+plt.figure(4)
+plt.contourf(normalized_X)
+plt.colorbar()
+
+
 test_file_table = read_tab_separated_file(test_file_list_filename)
-X_test,y_test = process_all_test_data(test_file_table)
+X_test,y_test = process_all_test_data(train_file_table)
+
 
 # analysis and prediction
 for method1 in range(1,4):
