@@ -221,8 +221,9 @@ def process_single_speaker(pass1,tbl_ix1,spkr_id1):
         # f0 = interpolate1(f0)
         # f0 = f0[0:13000]
         f0 = interpolate1(f0)
+        f0z_off = f0 - np.mean(f0)  # subtract mean for zero offset
         # calculate auto correlation
-        f0fft1 = np.fft.fft(f0)
+        f0fft1 = np.fft.fft(f0z_off)
         f0pwr_spectrum = np.abs(f0fft1) ** 2
         f0niquist = len(f0pwr_spectrum) // 2
         # f0lsp200 = f0pwr_spectrum[f0niquist-n_fline+1:f0niquist+1]
@@ -261,7 +262,8 @@ def process_all_train_data(age_file_table):
                 raise ValueError("pass1 error")
     x = age_tbl
     m = f0lsp_tbl
-    return(m,x)
+    normalized_m = m / m.sum(axis=1, keepdims=True)
+    return(normalized_m,x)
 
 def process_all_test_data(age_file_table):
     # process pass 1 and pass 2 for all files
@@ -273,7 +275,7 @@ def process_all_test_data(age_file_table):
     age_tbl = np.zeros(n_data, dtype=float)
     for pass1 in range(1,3):    # pass1 ==1 and pass1 == 2
         print('pass1 = ', pass1)
-        for table_ix in range(1,n_data):
+        for table_ix in range(0,n_data):
             spkr_age_record = age_file_table[table_ix]
             if pass1 < 3:
                 spkr_id1 = spkr_age_record[0]  # speaker number
@@ -288,8 +290,9 @@ def process_all_test_data(age_file_table):
                 raise ValueError("pass1 error")
     x = age_tbl
     m = f0lsp_tbl
+    normalized_m = m / m.sum(axis=1, keepdims=True)
     # calucualate linear regression coefficients
-    return(m,x)
+    return(normalized_m,x)
 
 # 現在のフォルダを表示した後指定したフォルダから情報を読み込む
 print('corrent directory : ' , os.getcwd())
@@ -303,15 +306,13 @@ X_train,y_train = process_all_train_data(train_file_table)
 
 ix_sort = np.argsort(y_train)
 X  = X_train[ix_sort]
-normalized_X = X / X.sum(axis=1, keepdims=True)
-normalized_Xr = X / X.sum(axis=0, keepdims=True)
 plt.figure(4)
-plt.contourf(normalized_X)
+plt.contourf(X)
 plt.colorbar()
 
 
 test_file_table = read_tab_separated_file(test_file_list_filename)
-X_test,y_test = process_all_test_data(train_file_table)
+X_test,y_test = process_all_test_data(test_file_table)
 
 
 # analysis and prediction
