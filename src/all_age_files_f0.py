@@ -33,15 +33,15 @@ wave_file_folder = "../slr101/speechocean762/WAVE"
 # n_fline= 100  # number of frequency line to be analyzed
 # n_decim= 5      # number of decimated samples
 
-# buf_len = 100000 # size of f0 enverope frequency spectrum
-# n_data = 125    # number of data
-# n_fline= 10000  # number of frequency line to be analyzed
-# n_decim= 5      # number of decimated samples
-
 buf_len = 100000 # size of f0 enverope frequency spectrum
-n_data = 10    # number of data
+n_data = 125    # number of data
 n_fline= 10000  # number of frequency line to be analyzed
 n_decim= 20      # number of decimated samples
+
+# buf_len = 100000 # size of f0 enverope frequency spectrum
+# n_data = 10    # number of data
+# n_fline= 10000  # number of frequency line to be analyzed
+# n_decim= 1      # number of decimated samples
 
 # tab 区切りの表をファイルから読み込み、リストのリストで返す
 def read_tab_separated_file(filename):
