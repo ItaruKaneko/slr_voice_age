@@ -7,6 +7,8 @@
 # todo
 # construct matrix of 200 samples of power spectrum (1Hz to 200Hz)
 # apply linear regression
+# versions
+#   all_age_files SVC,logistic regresion  - new regression tool
 
 import os
 import pyworld as pw
@@ -21,7 +23,8 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Lasso
 from sklearn.linear_model import ARDRegression
 from sklearn.neural_network import MLPRegressor
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
 from sklearn.metrics import mean_squared_error, r2_score
 
 # ファイル名を指定
@@ -35,8 +38,8 @@ wave_file_folder = "../slr101/speechocean762/WAVE"
 
 buf_len = 100000 # size of f0 enverope frequency spectrum
 n_data = 125    # number of data
-n_fline= 10000  # number of frequency line to be analyzed
-n_decim= 20      # number of decimated samples
+n_fline= 1000 # number of frequency line to be analyzed
+n_decim= 10      # number of decimated samples
 
 # buf_len = 100000 # size of f0 enverope frequency spectrum
 # n_data = 10    # number of data
@@ -53,6 +56,10 @@ def read_tab_separated_file(filename):
             data.append(split_line)
     return data
 
+
+# process single wav file
+# calculate f0 trajectory . It will be concatenated to single file for
+# each speaker in the caller function.
 def process_single_wav_file(pass1,folder1,fn1, f0_buf, f0_bp):
     sz1 = os.path.getsize(folder1 + '/' + fn1)
     n_frame = int(((sz1-44)+16000*2/200)*200/16000/2) # estimation of frame rate
@@ -115,7 +122,8 @@ def f0_tailor(f0):
         f0_modified.append(single_f0_new)
     return(f0_modified)
 
-# F
+# Interpolator is, interporation function for f0 discontinuity
+#
 class Interpolator():
     def __init__(self, y_array):
         self.x_observed = []
@@ -179,6 +187,11 @@ class Interpolator():
         self.start_flag = 0
         self.end_flag = -1
         self.y_interpolated = []
+
+
+# end of class Interpolator
+        
+# interpolate1 interpolatef0 contour
 
 def interpolate1(pre_interf0):
     # interpolation
@@ -266,6 +279,10 @@ def process_all_train_data(age_file_table):
     return(normalized_m,x)
 
 def process_all_test_data(age_file_table):
+
+
+    plt.figure(1)
+    plt.figure(2)
     # process pass 1 and pass 2 for all files
     # all_max1
     #  - maximum lenght in all speakers are determined in pass 1 and then kept through pass 2
@@ -306,7 +323,7 @@ X_train,y_train = process_all_train_data(train_file_table)
 
 ix_sort = np.argsort(y_train)
 X  = X_train[ix_sort]
-plt.figure(4)
+plt.figure(1)
 plt.contourf(X)
 plt.colorbar()
 
@@ -316,7 +333,7 @@ X_test,y_test = process_all_test_data(test_file_table)
 
 
 # analysis and prediction
-for method1 in range(1,4):
+for method1 in range(6,7):
     if method1==1:
         method_name = 'Linear Regerssion'
         model1= LinearRegression()
@@ -328,7 +345,13 @@ for method1 in range(1,4):
         model1= Lasso()
     elif method1==4:
         method_name = 'MLP Regoresso'
-        model1= MLPRegressor(hidden_layer_sizes=(10,), max_iter=1000)
+        model1= MLPRegressor(hidden_layer_sizes=(100,), max_iter=1000)
+    elif method1==5:
+        method_name = 'Logistic Regression'
+        model1= LogisticRegression(max_iter=1000)
+    elif method1==6:
+        method_name = 'SVM'
+        model1= SVC(kernel='linear')
     else:
         raise ValueError("method1 error")
 
@@ -338,8 +361,7 @@ for method1 in range(1,4):
     y_pred = model1.predict(X_test)
     mse = mean_squared_error(y_test, y_pred)
     r2 = r2_score(y_test, y_pred)
-    print('mse = ',mse)
-    print('r2 = ',r2)
+    print(method_name, '  , mse=',mse, ', r2=', r2 )
 
     plt.figure(method1)
     plt.xlabel('True value')
