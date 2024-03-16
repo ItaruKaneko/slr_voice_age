@@ -36,15 +36,15 @@ wave_file_folder = "../slr101/speechocean762/WAVE"
 # n_fline= 100  # number of frequency line to be analyzed
 # n_decim= 5      # number of decimated samples
 
+# buf_len = 100000 # size of f0 enverope frequency spectrum
+# n_data = 125    # number of data
+# n_fline= 1000 # number of frequency line to be analyzed
+# n_decim= 10      # number of decimated samples
+
 buf_len = 100000 # size of f0 enverope frequency spectrum
 n_data = 125    # number of data
-n_fline= 1000 # number of frequency line to be analyzed
-n_decim= 10      # number of decimated samples
-
-# buf_len = 100000 # size of f0 enverope frequency spectrum
-# n_data = 10    # number of data
-# n_fline= 10000  # number of frequency line to be analyzed
-# n_decim= 1      # number of decimated samples
+n_fline= 1000  # number of frequency line to be analyzed
+n_decim= 50      # number of decimated samples
 
 # tab 区切りの表をファイルから読み込み、リストのリストで返す
 def read_tab_separated_file(filename):
@@ -237,10 +237,12 @@ def process_single_speaker(pass1,tbl_ix1,spkr_id1):
         f0z_off = f0 - np.mean(f0)  # subtract mean for zero offset
         # calculate auto correlation
         f0fft1 = np.fft.fft(f0z_off)
-        f0pwr_spectrum = np.abs(f0fft1) ** 2
-        f0niquist = len(f0pwr_spectrum) // 2
+        # f0pwr_spectrum = np.abs(f0fft1) ** 2
+        # f0niquist = len(f0pwr_spectrum) // 2
+        # f0high=f0pwr_spectrum[f0niquist-n_fline+1:f0niquist+1]
+        f0niquist = len(f0fft1) // 2
+        f0high=f0fft1[f0niquist-n_fline+1:f0niquist+1]
         # f0lsp200 = f0pwr_spectrum[f0niquist-n_fline+1:f0niquist+1]
-        f0high=f0pwr_spectrum[f0niquist-n_fline+1:f0niquist+1]
         if n_decim == 1:
             f0decimated = f0high
         else:
@@ -323,7 +325,7 @@ X_train,y_train = process_all_train_data(train_file_table)
 
 ix_sort = np.argsort(y_train)
 X  = X_train[ix_sort]
-plt.figure(1)
+plt.figure(0)
 plt.contourf(X)
 plt.colorbar()
 
@@ -333,7 +335,7 @@ X_test,y_test = process_all_test_data(test_file_table)
 
 
 # analysis and prediction
-for method1 in range(6,7):
+for method1 in range(1,7):
     if method1==1:
         method_name = 'Linear Regerssion'
         model1= LinearRegression()
