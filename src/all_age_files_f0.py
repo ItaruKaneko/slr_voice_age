@@ -233,8 +233,8 @@ def process_single_speaker(pass1,tbl_ix1,spkr_id1):
         # tailor f0 for continuouscontour
         # f0 = interpolate1(f0)
         # f0 = f0[0:13000]
-        f0 = interpolate1(f0)
-        f0z_off = f0 - np.mean(f0)  # subtract mean for zero offset
+        f0interpolated = interpolate1(f0)
+        f0z_off = f0interpolated - np.mean(f0interpolated)  # subtract mean for zero offset
         # calculate auto correlation
         f0fft1 = np.fft.fft(f0z_off)
         # f0pwr_spectrum = np.abs(f0fft1) ** 2
