@@ -31,6 +31,7 @@ from sklearn.metrics import mean_squared_error, r2_score
 train_file_list_filename = "../slr101/speechocean762/train/spk2age"
 test_file_list_filename = "../slr101/speechocean762/test/spk2age"
 wave_file_folder = "../slr101/speechocean762/WAVE"
+plt_save_folder = "../pltsave"
 # buf_len = 50000 # size of f0 enverope frequency spectrum
 # n_data = 10    # number of data
 # n_fline= 100  # number of frequency line to be analyzed
@@ -40,6 +41,11 @@ wave_file_folder = "../slr101/speechocean762/WAVE"
 # n_data = 125    # number of data
 # n_fline= 1000 # number of frequency line to be analyzed
 # n_decim= 10      # number of decimated samples
+
+# buf_len = 100000 # size of f0 enverope frequency spectrum
+# n_data = 125    # number of data
+# n_fline= 1000  # number of frequency line to be analyzed
+# n_decim= 50      # number of decimated samples
 
 buf_len = 100000 # size of f0 enverope frequency spectrum
 n_data = 125    # number of data
@@ -325,9 +331,12 @@ X_train,y_train = process_all_train_data(train_file_table)
 
 ix_sort = np.argsort(y_train)
 X  = X_train[ix_sort]
+
+f_plt1=plt_save_folder + '/' + 'freqmap.png'
 plt.figure(0)
 plt.contourf(X)
 plt.colorbar()
+plt.savefig(f_plt1)   # save plot
 
 
 test_file_table = read_tab_separated_file(test_file_list_filename)
@@ -370,7 +379,8 @@ for method1 in range(1,7):
     plt.ylabel('Predicted value')
     plt.title(method_name)
     plt.scatter(y_test,y_pred)
-    plt.show()
+    f_plt1 = plt_save_folder + '/' + method_name + '.png'
+    plt.savefig(f_plt1)
     # MSEとR²スコアを計算
 
 print('end')
