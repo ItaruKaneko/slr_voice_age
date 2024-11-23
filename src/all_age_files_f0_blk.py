@@ -1,7 +1,9 @@
-# all_age_files_f0.py version 3
+# all_age_files_f0_blk.py version 1
+# 
+# Small data set for fast test
+
 # This version calculate linear regression coef correctly
 # calculate f0 waveform of each wav file in 200 samples/sec
-# concatenate all f0 coutour oin each speaker
 # Interporate f0 using scipy.interpolate / interp1d
 # apply fft and calculate power spectrumin f0pwr_spectrum
 # todo
@@ -48,7 +50,7 @@ plt_save_folder = "../pltsave"
 # n_decim= 50      # number of decimated samples
 
 buf_len = 100000 # size of f0 enverope frequency spectrum
-n_data = 125    # number of data
+n_data = 5    # number of data
 n_fline= 1000  # number of frequency line to be analyzed
 n_decim= 50      # number of decimated samples
 
