@@ -1,6 +1,7 @@
-# all_age_files_f0_blk.py version 1
-# 
-# Small data set for fast test
+# all_age_files_f0_blk.py version
+# Trying to change block sample trial
+# small data for testing -> change n_data to 125 for full set
+# transfer sample to 0.2~0.5 sec chunk
 
 # This version calculate linear regression coef correctly
 # calculate f0 waveform of each wav file in 200 samples/sec
@@ -50,7 +51,7 @@ plt_save_folder = "../pltsave"
 # n_decim= 50      # number of decimated samples
 
 buf_len = 100000 # size of f0 enverope frequency spectrum
-n_data = 5    # number of data
+n_data = 5    # number of data - 125 for full set
 n_fline= 1000  # number of frequency line to be analyzed
 n_decim= 50      # number of decimated samples
 
@@ -91,6 +92,7 @@ def process_single_wav_file(pass1,folder1,fn1, f0_buf, f0_bp):
         raise ValueError("pass1 should be 1 or 2")
     return(n_frame)
 
+# This function is not used in age_files_f0
 def f0_tailor(f0):
     f0_scaler = -4.5   ## 抑揚を強める場合、プラスに、弱める場合、マイナスにします
     f0_mean = np.mean([x for x in f0 if x!=0])
@@ -218,6 +220,10 @@ def interpolate1(pre_interf0):
     return(pro_interf0)
 
 
+# process single speaker
+#  spkr_id1   : speaker id
+#  tbl_ix1    : not used currently
+# /SPEAKERnn contains multiple wave files
 def process_single_speaker(pass1,tbl_ix1,spkr_id1):
     # process the speaker specified by spkr_age_record
     f0= np.zeros(buf_len, dtype = float)
@@ -225,9 +231,9 @@ def process_single_speaker(pass1,tbl_ix1,spkr_id1):
     # construct folder path
     spkr_folder = wave_file_folder + '/SPEAKER' + spkr_id1 
     # open wave file
-    wav_file_list = os.listdir(spkr_folder)
+    wav_file_list = os.listdir(spkr_folder)  # get list of wave files
     f0_bp = 0
-    for wav_fn in wav_file_list:
+    for wav_fn in wav_file_list:   # process all wav files in single speaker
     # for wav_fn in ["010440154.WAV"]:
         # ここで1ファイルの処理の関数を使う
         print(pass1, tbl_ix1,wav_fn)
@@ -259,7 +265,8 @@ def process_single_speaker(pass1,tbl_ix1,spkr_id1):
     else:
         return(f0_bp,0)
 
-
+# process all training data
+#  age_file_table : table contains file names of all files
 def process_all_train_data(age_file_table):
     # process pass 1 and pass 2 for all files
     # all_max1
@@ -271,7 +278,7 @@ def process_all_train_data(age_file_table):
     for pass1 in range(1,3):    # pass1 ==1 and pass1 == 2
         print('pass1 = ', pass1)
         for table_ix in range(0,n_data):
-            spkr_age_record = age_file_table[table_ix]
+            spkr_age_record = age_file_table[table_ix]  # get single file contains spkr+id, age
             if pass1 < 3:
                 spkr_id1 = spkr_age_record[0]  # speaker number
                 age_tbl[table_ix] = int(spkr_age_record[1]) # age of the speaker
