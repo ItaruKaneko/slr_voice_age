@@ -13,6 +13,12 @@
 # versions
 #   all_age_files SVC,logistic regresion  - new regression tool
 
+# note
+#  f0 sampling rate of f0 : 200 sample/sec using pyworld py.dio
+#  f0blk_len : 100 , 0.5sec in 200 sample/sec f0 sampling rate
+#  blk_X = [[c0, ... , c199],...] blk_y = [age1, age2 ,...]
+#  in pass1==1 calculate size of blk_X, in pass 2, calculate coefs
+
 import os
 import pyworld as pw
 import numpy as np
@@ -51,9 +57,11 @@ plt_save_folder = "../pltsave"
 # n_decim= 50      # number of decimated samples
 
 buf_len = 100000 # size of f0 enverope frequency spectrum
-n_data = 5    # number of data - 125 for full set
+f0blk_len = 100 # 0.5 sec in 200sample/sec
+n_data = 50    # number of data - 125 for full set
 n_fline= 1000  # number of frequency line to be analyzed
 n_decim= 50      # number of decimated samples
+n_wave_max =4    # max n_wave
 
 # tab 区切りの表をファイルから読み込み、リストのリストで返す
 def read_tab_separated_file(filename):
@@ -69,9 +77,14 @@ def read_tab_separated_file(filename):
 # process single wav file
 # calculate f0 trajectory . It will be concatenated to single file for
 # each speaker in the caller function.
-def process_single_wav_file(pass1,folder1,fn1, f0_buf, f0_bp):
+# When no-block mode
+#  f0_buf: output buffer to store result
+#  f0_bp: pointer
+#  full f0 contoure will be stored
+def process_single_wav_file(pass1,age1,folder1,fn1, blk_X, blk_y, bx, spkr_id1): 
     sz1 = os.path.getsize(folder1 + '/' + fn1)
     n_frame = int(((sz1-44)+16000*2/200)*200/16000/2) # estimation of frame rate
+    # n_frame is 200 sample/sec number of f0 samples
     # assumption sampling rate = 16000, header size = 44
     if pass1 == 1:
         pass
@@ -86,11 +99,26 @@ def process_single_wav_file(pass1,folder1,fn1, f0_buf, f0_bp):
         f0 = pw.stonemask(y1, _f0, _time, sr)
         if f0.shape[0] > n_frame:
             raise ValueError("estimated n_frame mismatch")
-        sz2 = len(f0)
-        f0_buf[f0_bp:f0_bp+sz2] = f0
+        if n_frame != len(f0):
+            raise ValueError("n_frame does not match")
     else:
         raise ValueError("pass1 should be 1 or 2")
-    return(n_frame)
+    n_blk = int((n_frame-100)/100)
+
+    # process f0
+    if pass1 == 1:
+        pass
+    elif pass1 == 2:
+        #for w_x in range(0, len1-100, 100):  # 0 to len1-100 step 100
+        for bx1 in range(0, n_blk):  # 0 to len1-100 step 100
+            fftresult=np.fft.fft(f0[bx1*100:bx1*100+100]) # fourie transform
+            print('fftresult.shape=', fftresult.shape)
+            # when bx = 11,bx * 100 = 110, f0.shape is 495
+            blk_X[bx+bx1,0:100]=np.real(fftresult)
+            blk_X[bx+bx1,100:200]=np.real(fftresult)
+            blk_y[bx+bx1] = age1
+
+    return(n_blk+bx)
 
 # This function is not used in age_files_f0
 def f0_tailor(f0):
@@ -224,109 +252,62 @@ def interpolate1(pre_interf0):
 #  spkr_id1   : speaker id
 #  tbl_ix1    : not used currently
 # /SPEAKERnn contains multiple wave files
-def process_single_speaker(pass1,tbl_ix1,spkr_id1):
+def process_single_speaker(pass1,age1, blk_X, blk_y, bx, spkr_id1):
     # process the speaker specified by spkr_age_record
+    bx1 = bx
     f0= np.zeros(buf_len, dtype = float)
-    f0[0:buf_len]=100.0
+    f0[0:buf_len]=100.0   # f0 is buffer of f0, length fixed
     # construct folder path
     spkr_folder = wave_file_folder + '/SPEAKER' + spkr_id1 
     # open wave file
     wav_file_list = os.listdir(spkr_folder)  # get list of wave files
     f0_bp = 0
-    for wav_fn in wav_file_list:   # process all wav files in single speaker
-    # for wav_fn in ["010440154.WAV"]:
+    n_wave =  len(wav_file_list)
+    if n_wave > n_wave_max:
+        n_wave = n_wave_max
+    print('lentgh of wav_file_list = ', n_wave)
+    for wav_id in range(0,n_wave):
+        # for wav_fn in wav_file_list:   # process all wav files in single speaker
+        wav_fn = wav_file_list[wav_id]
+        # for wav_fn in ["010440154.WAV"]:
         # ここで1ファイルの処理の関数を使う
-        print(pass1, tbl_ix1,wav_fn)
-        len1 = process_single_wav_file(pass1,spkr_folder,wav_fn,f0,f0_bp)
-        if buf_len < f0_bp + len1:
-            raise ValueError("buf_len overflow")
-        # print(spkr_id, wav_fn, age1, len1, f0_bp)
-        f0_bp += len1
-    # f0 contains f0 contour for all wave file of speaker
-    if pass1 == 2:
-        # tailor f0 for continuouscontour
-        # f0 = interpolate1(f0)
-        # f0 = f0[0:13000]
-        f0interpolated = interpolate1(f0)
-        f0z_off = f0interpolated - np.mean(f0interpolated)  # subtract mean for zero offset
-        # calculate auto correlation
-        f0fft1 = np.fft.fft(f0z_off)
-        # f0pwr_spectrum = np.abs(f0fft1) ** 2
-        # f0niquist = len(f0pwr_spectrum) // 2
-        # f0high=f0pwr_spectrum[f0niquist-n_fline+1:f0niquist+1]
-        f0niquist = len(f0fft1) // 2
-        f0high=f0fft1[f0niquist-n_fline+1:f0niquist+1]
-        # f0lsp200 = f0pwr_spectrum[f0niquist-n_fline+1:f0niquist+1]
-        if n_decim == 1:
-            f0decimated = f0high
-        else:
-            f0decimated = signal.decimate(f0high, n_decim, n=None, ftype='iir', axis=-1, zero_phase=True)
-        return(f0_bp,f0decimated)
-    else:
-        return(f0_bp,0)
+        print(pass1, 1,wav_fn)
+        bx1 = process_single_wav_file(pass1,age1, spkr_folder,wav_fn,blk_X, blk_y, bx1, spkr_id1) 
+        # returned value is new bx1 after process
+    return(bx1)
 
 # process all training data
 #  age_file_table : table contains file names of all files
-def process_all_train_data(age_file_table):
+def process_file_list(age_file_table):
     # process pass 1 and pass 2 for all files
     # all_max1
     #  - maximum lenght in all speakers are determined in pass 1 and then kept through pass 2
     all_max1 = 0
     fft_buf1 = np.zeros(buf_len)
-    f0lsp_tbl = np.zeros((n_data,n_fline//n_decim), dtype = float)
-    age_tbl = np.zeros(n_data, dtype=float)
+    # blk_X, blk_y will be allocated at the end of pass==1
+    blk_X = 0
+    blk_y = 0
+
     for pass1 in range(1,3):    # pass1 ==1 and pass1 == 2
         print('pass1 = ', pass1)
+        bx = 0
         for table_ix in range(0,n_data):
             spkr_age_record = age_file_table[table_ix]  # get single file contains spkr+id, age
             if pass1 < 3:
                 spkr_id1 = spkr_age_record[0]  # speaker number
-                age_tbl[table_ix] = int(spkr_age_record[1]) # age of the speaker
-                spkr_max1, f0lsp_tbl[table_ix] = process_single_speaker(pass1,table_ix,spkr_id1)
-                if all_max1 < spkr_max1:
-                    all_max1 = spkr_max1
-                print('max_len_in_all_spkr', spkr_max1, all_max1)
+                age1 = spkr_age_record[1]
+                bx = process_single_speaker(pass1,age1, blk_X, blk_y, bx, spkr_id1)
+                print('speaker=', spkr_id1, ', age=', age1, ', bx=',bx)
             elif pass1 == 3:
                 pass
             else:
                 raise ValueError("pass1 error")
-    x = age_tbl
-    m = f0lsp_tbl
-    normalized_m = m / m.sum(axis=1, keepdims=True)
-    return(normalized_m,x)
+        # blk_X, blk_y will be allocated at the end of pass==1
+        if pass1==1:
+            blk_X = np.zeros((bx,200))
+            blk_y = np.zeros(bx)
+    return (blk_X,blk_y)
 
-def process_all_test_data(age_file_table):
-
-
-    plt.figure(1)
-    plt.figure(2)
-    # process pass 1 and pass 2 for all files
-    # all_max1
-    #  - maximum lenght in all speakers are determined in pass 1 and then kept through pass 2
-    all_max1 = 0
-    fft_buf1 = np.zeros(buf_len)
-    f0lsp_tbl = np.zeros((n_data,n_fline//n_decim), dtype = float)
-    age_tbl = np.zeros(n_data, dtype=float)
-    for pass1 in range(1,3):    # pass1 ==1 and pass1 == 2
-        print('pass1 = ', pass1)
-        for table_ix in range(0,n_data):
-            spkr_age_record = age_file_table[table_ix]
-            if pass1 < 3:
-                spkr_id1 = spkr_age_record[0]  # speaker number
-                age_tbl[table_ix] = int(spkr_age_record[1]) # age of the speaker
-                spkr_max1, f0lsp_tbl[table_ix] = process_single_speaker(pass1,table_ix,spkr_id1)
-                if all_max1 < spkr_max1:
-                    all_max1 = spkr_max1
-                print('max_len_in_all_spkr', spkr_max1, all_max1)
-            elif pass1 == 3:
-                pass
-            else:
-                raise ValueError("pass1 error")
-    x = age_tbl
-    m = f0lsp_tbl
-    normalized_m = m / m.sum(axis=1, keepdims=True)
-    # calucualate linear regression coefficients
-    return(normalized_m,x)
 
 # 現在のフォルダを表示した後指定したフォルダから情報を読み込む
 print('corrent directory : ' , os.getcwd())
@@ -336,7 +317,7 @@ train_file_table = read_tab_separated_file(train_file_list_filename)
 # データの確認
 print(len(train_file_table) , ' data had been raead.')
 
-X_train,y_train = process_all_train_data(train_file_table)
+X_train,y_train = process_file_list(train_file_table)
 
 ix_sort = np.argsort(y_train)
 X  = X_train[ix_sort]
@@ -349,7 +330,8 @@ plt.savefig(f_plt1)   # save plot
 
 
 test_file_table = read_tab_separated_file(test_file_list_filename)
-X_test,y_test = process_all_test_data(test_file_table)
+X_test,y_test = process_file_list(test_file_table)    #<-------------- fix it
+# X_test,y_test = process_all_test_data(test_file_table)    #<-------------- fix it
 
 
 # analysis and prediction
