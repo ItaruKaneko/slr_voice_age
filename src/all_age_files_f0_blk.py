@@ -1,5 +1,5 @@
 # all_age_files_f0_blk.py version
-# exp 3
+# exp 3 bug fixed
 #  ndata= 125
 #  age 0-60
 # Trying to change block sample trial
@@ -61,9 +61,8 @@ plt_save_folder = "../pltsave"
 
 buf_len = 100000 # size of f0 enverope frequency spectrum
 f0blk_len = 100 # 0.5 sec in 200sample/sec
-n_data = 50    # number of data - 125 for full set
+n_data = 125    # number of data - 125 for full set
 n_fline= 1000  # number of frequency line to be analyzed
-n_decim= 125      # number of decimated samples
 n_wave_max =30    # max n_wave
 
 # tab 区切りの表をファイルから読み込み、リストのリストで返す
@@ -257,6 +256,8 @@ def interpolate1(pre_interf0):
 # /SPEAKERnn contains multiple wave files
 def process_single_speaker(pass1,age1, blk_X, blk_y, bx, spkr_id1):
     # process the speaker specified by spkr_age_record
+    # if age1 < 20:
+        # return(bx) # do nothing
     bx1 = bx
     f0= np.zeros(buf_len, dtype = float)
     f0[0:buf_len]=100.0   # f0 is buffer of f0, length fixed
@@ -298,7 +299,7 @@ def process_file_list(age_file_table):
             spkr_age_record = age_file_table[table_ix]  # get single file contains spkr+id, age
             if pass1 < 3:
                 spkr_id1 = spkr_age_record[0]  # speaker number
-                age1 = spkr_age_record[1]
+                age1 = int(spkr_age_record[1])
                 bx = process_single_speaker(pass1,age1, blk_X, blk_y, bx, spkr_id1)
                 print('speaker=', spkr_id1, ', age=', age1, ', bx=',bx)
             elif pass1 == 3:
