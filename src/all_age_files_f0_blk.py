@@ -1,4 +1,7 @@
 # all_age_files_f0_blk.py version
+# exp 2
+#  ndata= 50
+#  age 0-60
 # Trying to change block sample trial
 # small data for testing -> change n_data to 125 for full set
 # transfer sample to 0.2~0.5 sec chunk
