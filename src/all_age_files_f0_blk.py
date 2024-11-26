@@ -1,6 +1,6 @@
 # all_age_files_f0_blk.py version
-# exp 2
-#  ndata= 50
+# exp 3
+#  ndata= 125
 #  age 0-60
 # Trying to change block sample trial
 # small data for testing -> change n_data to 125 for full set
@@ -63,8 +63,8 @@ buf_len = 100000 # size of f0 enverope frequency spectrum
 f0blk_len = 100 # 0.5 sec in 200sample/sec
 n_data = 50    # number of data - 125 for full set
 n_fline= 1000  # number of frequency line to be analyzed
-n_decim= 50      # number of decimated samples
-n_wave_max =4    # max n_wave
+n_decim= 125      # number of decimated samples
+n_wave_max =30    # max n_wave
 
 # tab 区切りの表をファイルから読み込み、リストのリストで返す
 def read_tab_separated_file(filename):
@@ -338,7 +338,7 @@ X_test,y_test = process_file_list(test_file_table)    #<-------------- fix it
 
 
 # analysis and prediction
-for method1 in range(1,7):
+for method1 in range(1,6):
     if method1==1:
         method_name = 'Linear Regerssion'
         model1= LinearRegression()
