@@ -1,7 +1,7 @@
 # all_age_files_f0_blk.py version
-# exp 4 bug fixed
-#  ndata= 120
-#  age 21-60
+# exp 5 bug fixed
+#  ndata= 125
+#  age 18-60
 # Trying to change block sample trial
 # small data for testing -> change n_data to 125 for full set
 # transfer sample to 0.2~0.5 sec chunk
@@ -61,7 +61,7 @@ plt_save_folder = "../pltsave"
 
 buf_len = 100000 # size of f0 enverope frequency spectrum
 f0blk_len = 100 # 0.5 sec in 200sample/sec
-n_data = 120    # number of data - 125 for full set
+n_data = 125    # number of data - 125 for full set
 n_fline= 1000  # number of frequency line to be analyzed
 n_wave_max =30    # max n_wave
 
@@ -256,7 +256,7 @@ def interpolate1(pre_interf0):
 # /SPEAKERnn contains multiple wave files
 def process_single_speaker(pass1,age1, blk_X, blk_y, bx, spkr_id1):
     # process the speaker specified by spkr_age_record
-    if age1 < 21:
+    if age1 < 19:
         return(bx) # do nothing
     bx1 = bx
     f0= np.zeros(buf_len, dtype = float)
