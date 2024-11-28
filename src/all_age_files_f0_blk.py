@@ -1,5 +1,5 @@
 # all_age_files_f0_blk.py version
-# exp 6
+# exp 2-1
 #  ndata= 125
 #  age 0-18
 # Trying to change block sample trial
@@ -116,8 +116,8 @@ def process_single_wav_file(pass1,age1,folder1,fn1, blk_X, blk_y, bx, spkr_id1):
             fftresult=np.fft.fft(f0[bx1*100:bx1*100+100]) # fourie transform
             print('fftresult.shape=', fftresult.shape)
             # when bx = 11,bx * 100 = 110, f0.shape is 495
-            blk_X[bx+bx1,0:100]=np.real(fftresult)
-            blk_X[bx+bx1,100:200]=np.real(fftresult)
+            blk_X[bx+bx1,0:51]=np.real(fftresult[0:51])
+            blk_X[bx+bx1,51:100]=np.real(fftresult[0:49])
             blk_y[bx+bx1] = age1
 
     return(n_blk+bx)
@@ -308,7 +308,7 @@ def process_file_list(age_file_table):
                 raise ValueError("pass1 error")
         # blk_X, blk_y will be allocated at the end of pass==1
         if pass1==1:
-            blk_X = np.zeros((bx,200))
+            blk_X = np.zeros((bx,100))
             blk_y = np.zeros(bx)
     return (blk_X,blk_y)
 
