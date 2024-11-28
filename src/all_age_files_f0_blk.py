@@ -1,7 +1,7 @@
 # all_age_files_f0_blk.py version
-# exp 2-1
+# exp 2-2
 #  ndata= 125
-#  age 0-18
+#  age 0-60
 # Trying to change block sample trial
 # small data for testing -> change n_data to 125 for full set
 # transfer sample to 0.2~0.5 sec chunk
@@ -256,8 +256,8 @@ def interpolate1(pre_interf0):
 # /SPEAKERnn contains multiple wave files
 def process_single_speaker(pass1,age1, blk_X, blk_y, bx, spkr_id1):
     # process the speaker specified by spkr_age_record
-    if age1 > 18:
-        return(bx) # do nothing
+    #if age1 > 18:
+    #    return(bx) # do nothing
     bx1 = bx
     f0= np.zeros(buf_len, dtype = float)
     f0[0:buf_len]=100.0   # f0 is buffer of f0, length fixed
